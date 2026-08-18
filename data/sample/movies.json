@@ -1,0 +1,29 @@
+[
+  {
+    "movie_id": 123,
+    "title": "Arrival",
+    "genres": ["Science Fiction", "Drama", "Mystery"],
+    "overview": "A linguist works with the military to communicate with alien lifeforms after twelve mysterious spacecraft appear around the world.",
+    "release_year": 2016,
+    "runtime_minutes": 116,
+    "popularity_score": 88.5
+  },
+  {
+    "movie_id": 456,
+    "title": "Interstellar",
+    "genres": ["Science Fiction", "Adventure", "Drama"],
+    "overview": "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+    "release_year": 2014,
+    "runtime_minutes": 169,
+    "popularity_score": 95.2
+  },
+  {
+    "movie_id": 789,
+    "title": "The Grand Budapest Hotel",
+    "genres": ["Comedy", "Drama"],
+    "overview": "A writer encounters the owner of an aging high-class hotel, who tells him of his early years serving as a lobby boy in the hotel's glorious years.",
+    "release_year": 2014,
+    "runtime_minutes": 99,
+    "popularity_score": 82.1
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "user_id": 101,
+  "recommendations": [
+    {
+      "movie_id": 123,
+      "title": "Arrival",
+      "final_score": 0.92,
+      "evidence": {
+        "content_similarity": 0.91,
+        "collaborative_score": 0.87,
+        "popularity_score": 0.72,
+        "preference_match": 0.94
+      },
+      "reason_codes": [
+        "GENRE_MATCH",
+        "SIMILAR_TO_LIKED_MOVIES"
+      ],
+      "confidence": "high"
+    },
+    {
+      "movie_id": 456,
+      "title": "Interstellar",
+      "final_score": 0.88,
+      "evidence": {
+        "content_similarity": 0.85,
+        "collaborative_score": 0.90,
+        "popularity_score": 0.95,
+        "preference_match": 0.88
+      },
+      "reason_codes": [
+        "POPULAR_IN_GENRE",
+        "SIMILAR_USER_PREFERENCE"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

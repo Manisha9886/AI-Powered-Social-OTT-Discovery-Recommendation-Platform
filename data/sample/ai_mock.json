@@ -1,0 +1,28 @@
+{
+  "understand_intent_mock": {
+    "intent": "movie_recommendation",
+    "preferences": {
+      "similar_to": ["Interstellar"],
+      "genres": ["Science Fiction"],
+      "max_runtime": 120
+    },
+    "missing_information": [],
+    "constraints": {
+      "max_runtime": 120
+    }
+  },
+  "clarification_mock": {
+    "missing_information": ["genre_or_mood"],
+    "clarifying_question": "Would you prefer something exciting, funny, emotional, or suspenseful?"
+  },
+  "explanation_mock": {
+    "movie_id": 123,
+    "explanation": "I'm recommending 'Arrival' because you enjoy Science Fiction films like 'Interstellar'. It has a strong 94% match with your profile preferences and is highly rated by users with similar tastes. Since you wanted something under two hours, its 116-minute runtime fits perfectly.",
+    "confidence": "high",
+    "sources": [
+      "TMDB metadata",
+      "user preference profile",
+      "recommendation model evidence"
+    ]
+  }
+}

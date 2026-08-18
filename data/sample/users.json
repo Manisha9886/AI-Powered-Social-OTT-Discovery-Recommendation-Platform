@@ -1,0 +1,20 @@
+[
+  {
+    "id": 101,
+    "username": "movie_fanatic",
+    "email": "fanatic@example.com",
+    "preferences": {
+      "favorite_genres": ["Science Fiction", "Action"],
+      "disliked_genres": ["Horror"]
+    }
+  },
+  {
+    "id": 102,
+    "username": "casual_viewer",
+    "email": "casual@example.com",
+    "preferences": {
+      "favorite_genres": ["Comedy", "Romance"],
+      "disliked_genres": ["Documentary"]
+    }
+  }
+]
