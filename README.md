@@ -102,27 +102,6 @@ This project is designed for **four developers working concurrently**.
 
 The project is divided into four major technical domains. Each team member has **primary ownership** of one domain and is responsible for implementing, testing, documenting, and maintaining it.
 
-### ⚠️ Important Collaboration Rule
-
-Folder ownership does **not** mean that other developers are technically blocked from accessing the folder.
-
-Everyone can **read the entire repository**.
-
-However, developers should normally **write/modify code only within their primary ownership areas**, unless a cross-module change is required.
-
-If a developer needs to modify another member's primary area:
-
-1. Discuss the change with the owner.
-2. Agree on the required change.
-3. Create a feature branch.
-4. Keep the modification focused.
-5. Open a Pull Request.
-6. Have the relevant owner review it before merging.
-
-This allows the team to work concurrently without creating unnecessary merge conflicts.
-
----
-
 # 👤 Team Member 1 — Data Engineering & Movie Intelligence
 
 ### Primary Goal
