@@ -8,6 +8,13 @@ ssl._create_default_https_context = ssl._create_unverified_context
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1 import api_router
+from app.db.init_db import init_db
+
+# Initialize Database tables
+try:
+    init_db()
+except Exception as e:
+    print(f"Database initialization warning: {e}")
 
 app = FastAPI(
     title="OTT Discovery API",

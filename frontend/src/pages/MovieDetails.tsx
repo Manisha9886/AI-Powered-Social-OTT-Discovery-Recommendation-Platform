@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { movieService } from '../services/api';
+import { movieService, watchlistService } from '../services/api';
 import { Movie } from '../types';
-import { Star, Loader2, ArrowLeft, Clock, Film } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Star, Loader2, ArrowLeft, Clock, Film, Bookmark, Check, BookOpen } from 'lucide-react';
 
 export default function MovieDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [movie, setMovie] = useState<Movie | null>(null);
+  const [overview, setOverview] = useState<string | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
       setLoading(true);
       setError(false);
+      setOverviewLoading(true);
+
       movieService.getMovie(id).then(res => {
         setMovie(res.data);
         setLoading(false);
@@ -22,8 +30,35 @@ export default function MovieDetails() {
         setError(true);
         setLoading(false);
       });
+
+      movieService.getOverview(id).then(res => {
+        setOverview(res.data?.overview || "Overview is currently unavailable for this movie.");
+      }).catch(err => {
+        console.error(err);
+        setOverview("Overview is currently unavailable for this movie.");
+      }).finally(() => {
+        setOverviewLoading(false);
+      });
     }
   }, [id]);
+
+  const handleToggleWatchlist = async () => {
+    if (!user || !movie) return;
+    setSaving(true);
+    try {
+      if (isSaved) {
+        await watchlistService.removeFromWatchlist(Number(movie.movie_id));
+        setIsSaved(false);
+      } else {
+        await watchlistService.addToWatchlist(Number(movie.movie_id));
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-cinematic-base text-neutral-500 space-y-4">
@@ -46,6 +81,7 @@ export default function MovieDetails() {
     : null;
     
   const genres = movie.genres || [];
+  const ratingScore = movie.vote_average ?? (movie as any).rating_score;
 
   return (
     <div className="min-h-screen bg-cinematic-base relative pb-24">
@@ -89,10 +125,10 @@ export default function MovieDetails() {
               </h1>
               
               <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-                {movie.vote_average ? (
+                {ratingScore !== undefined ? (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded-full border border-yellow-500/20">
                     <Star className="w-4 h-4 fill-current" />
-                    <span>{movie.vote_average.toFixed(1)} Rating</span>
+                    <span>{Number(ratingScore).toFixed(1)} Rating</span>
                   </div>
                 ) : null}
                 <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 text-white rounded-full border border-white/10">
@@ -102,26 +138,59 @@ export default function MovieDetails() {
                 {genres.length > 0 && (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 text-white rounded-full border border-white/10">
                     <Film className="w-4 h-4 text-neutral-400" />
-                    <span>{genres.join(', ')}</span>
+                    <span>{Array.isArray(genres) ? genres.join(', ') : genres}</span>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="max-w-3xl">
-              <h3 className="text-lg font-semibold text-white mb-3 font-display">Overview</h3>
-              <p className="text-neutral-300 leading-relaxed text-lg font-light">
-                {movie.overview || "We don't have an overview translated in English. Help us expand our database by adding one."}
-              </p>
+              <h3 className="text-lg font-semibold text-white mb-3 font-display flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-blue-400" /> Knowledge-Based Overview
+              </h3>
+              {overviewLoading ? (
+                <div className="flex items-center gap-3 py-4 text-neutral-400 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin text-netflix-red" />
+                  <span>Fetching overview...</span>
+                </div>
+              ) : (
+                <p className="text-neutral-300 leading-relaxed text-lg font-light bg-black/40 p-6 rounded-2xl border border-white/10 shadow-inner">
+                  {overview}
+                </p>
+              )}
             </div>
             
-            <div className="pt-8 border-t border-white/5 flex gap-4">
+            <div className="pt-8 border-t border-white/5 flex flex-wrap gap-4">
               <Link 
                 to="/recommendations" 
                 className="px-6 py-3 bg-netflix-red hover:bg-red-700 text-white font-medium rounded-full transition-colors flex items-center justify-center shadow-lg"
               >
                 Find Similar Movies
               </Link>
+
+              {user && (
+                <button
+                  onClick={handleToggleWatchlist}
+                  disabled={saving}
+                  className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 shadow-lg border ${
+                    isSaved 
+                      ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400 hover:bg-emerald-600/30' 
+                      : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                  }`}
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isSaved ? (
+                    <>
+                      <Check className="w-4 h-4" /> Added to Watchlist
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="w-4 h-4" /> Save to Watchlist
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

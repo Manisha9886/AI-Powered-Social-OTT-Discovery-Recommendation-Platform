@@ -6,8 +6,16 @@ import pandas as pd
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 # Load environment variables
 load_dotenv()
+
+# Clean up invalid SSL environment variables if file does not exist
+for ssl_var in ["SSL_CERT_FILE", "REQUESTS_CA_BUNDLE"]:
+    if ssl_var in os.environ and not os.path.exists(os.environ[ssl_var]):
+        del os.environ[ssl_var]
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "movie-recommendations")
@@ -123,7 +131,9 @@ def main():
         ingest_to_pinecone(records)
         
     except Exception as e:
+        import traceback
         print(f"Ingestion failed: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()

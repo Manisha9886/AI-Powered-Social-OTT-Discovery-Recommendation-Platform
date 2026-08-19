@@ -53,6 +53,11 @@ data/processed/*
 !data/sample/
 !data/README.md
 
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
 # OS
 .DS_Store
 Thumbs.db

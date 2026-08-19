@@ -6,11 +6,12 @@ import { Search, Loader2 } from 'lucide-react';
 
 export default function Movies() {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    movieService.getMovies(1, 48).then(res => {
+    movieService.getMovies(1, 100).then(res => {
       setMovies(res.data.movies);
       setLoading(false);
     }).catch(err => {
@@ -20,6 +21,16 @@ export default function Movies() {
     });
   }, []);
 
+  const filteredMovies = movies.filter(movie => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const titleMatch = movie.title.toLowerCase().includes(query);
+    const genreMatch = Array.isArray(movie.genres) 
+      ? movie.genres.some(g => g.toLowerCase().includes(query))
+      : (typeof movie.genres === 'string' && movie.genres.toLowerCase().includes(query));
+    return titleMatch || genreMatch;
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-24 min-h-screen">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -28,15 +39,15 @@ export default function Movies() {
           <p className="text-neutral-400 text-lg">Browse our entire knowledge base of cinematic experiences.</p>
         </div>
         
-        {/* Placeholder for future local search/filter if needed, keeps layout balanced */}
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+        {/* Real-Time Live Search Bar */}
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input 
             type="text" 
-            placeholder="Search catalog..." 
-            className="w-full bg-cinematic-surface border border-cinematic-border text-white rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:border-neutral-500 transition-colors"
-            disabled
-            title="Use the AI Assistant for intelligent search!"
+            placeholder="Search catalog by title or genre..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-cinematic-surface border border-cinematic-border text-white placeholder-neutral-500 rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:border-neutral-400 transition-colors text-sm shadow-inner"
           />
         </div>
       </div>
@@ -53,13 +64,14 @@ export default function Movies() {
             Try Again
           </button>
         </div>
-      ) : movies.length === 0 ? (
-        <div className="text-center py-32">
-          <p className="text-xl text-neutral-400">No movies found.</p>
+      ) : filteredMovies.length === 0 ? (
+        <div className="text-center py-32 bg-cinematic-surface border border-cinematic-border rounded-2xl p-8">
+          <p className="text-xl font-semibold text-neutral-300 mb-1">No movies found</p>
+          <p className="text-sm text-neutral-500">No movies match "{searchQuery}". Try searching for another title or genre.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-          {movies.map(movie => (
+          {filteredMovies.map(movie => (
             <MovieCard key={movie.movie_id} movie={movie} />
           ))}
         </div>
