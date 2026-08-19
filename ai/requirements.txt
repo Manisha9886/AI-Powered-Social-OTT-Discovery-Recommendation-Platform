@@ -1,3 +1,9 @@
 langchain>=0.1.0
-openai>=1.0.0
 python-dotenv>=1.0.0
+pandas
+pyarrow
+sentence-transformers
+pinecone
+langchain-huggingface
+langchain-pinecone
+langchain-core

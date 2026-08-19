@@ -21,7 +21,7 @@ import sys
 import ast
 import json
 from pathlib import Path
-from typing import List, Any
+from typing import List, Any, Dict, Tuple
 import pandas as pd
 import numpy as np
 
@@ -179,7 +179,7 @@ def clean_tmdb_movies(movies_path: Path, credits_path: Path) -> pd.DataFrame:
     return clean_df
 
 
-def clean_movielens_ratings(ratings_path: Path, mapping_path: Path) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+def clean_movielens_ratings(ratings_path: Path, mapping_path: Path) -> tuple[pd.DataFrame, dict[str, any]]:
     """
     Cleans MovieLens ratings and links them with mapped TMDB movie IDs.
     Excludes ratings that have no TMDB mapping.
