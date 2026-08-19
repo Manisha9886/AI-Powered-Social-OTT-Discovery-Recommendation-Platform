@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Info, BookOpen } from 'lucide-react';
+import { Star, Info, BookOpen, Film } from 'lucide-react';
 import OverviewModal from './OverviewModal';
 
 export interface MovieCardProps {
@@ -18,9 +18,18 @@ export interface MovieCardProps {
 
 export default function MovieCard({ movie, showScore }: MovieCardProps) {
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const posterUrl = movie.poster_path
-    ? (movie.poster_path.startsWith('http') ? movie.poster_path : `https://image.tmdb.org/t/p/w500${movie.poster_path}`)
+  const isValidImage = (path?: string) => {
+    if (!path) return false;
+    if (path.startsWith('/')) return true; // TMDB relative image path
+    if (path.includes('image.tmdb.org') || path.includes('media-amazon.com') || path.includes('ssl-images-amazon.com') || path.includes('wikimedia.org')) return true;
+    if (path.match(/\.(jpg|jpeg|png|webp)(\?.*)?$/i)) return true;
+    return false;
+  };
+
+  const posterUrl = (!imgError && isValidImage(movie.poster_path))
+    ? (movie.poster_path!.startsWith('http') ? movie.poster_path! : `https://image.tmdb.org/t/p/w500${movie.poster_path}`)
     : null;
 
   const genreText = Array.isArray(movie.genres) 
@@ -31,26 +40,39 @@ export default function MovieCard({ movie, showScore }: MovieCardProps) {
     <>
       <div className="group relative flex flex-col rounded-xl overflow-hidden bg-cinematic-surface border border-cinematic-border shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:border-white/20">
         {/* Poster Image Container */}
-        <div className="relative aspect-[2/3] w-full overflow-hidden bg-gradient-to-br from-neutral-800 to-black">
+        <div className="relative aspect-[2/3] w-full overflow-hidden bg-gradient-to-b from-neutral-800 via-neutral-900 to-black">
           {posterUrl ? (
             <img 
               src={posterUrl} 
               alt={movie.title} 
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
-              }}
+              onError={() => setImgError(true)}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
-              <span className="font-display font-bold text-xl text-neutral-600 uppercase tracking-widest">{movie.title.slice(0, 1)}</span>
+            <div className="w-full h-full flex flex-col items-center justify-between p-5 text-center bg-gradient-to-br from-red-950/40 via-neutral-900 to-neutral-950 border border-white/5 relative overflow-hidden">
+              <div className="w-full flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-neutral-500">
+                <span className="flex items-center gap-1 text-netflix-red"><Film className="w-3 h-3" /> MOVIEAI</span>
+                <span>{movie.release_year || ''}</span>
+              </div>
+
+              <div className="my-auto px-2 py-4 space-y-2">
+                <span className="inline-block p-3 rounded-full bg-white/5 border border-white/10 text-netflix-red mb-1">
+                  <Film className="w-6 h-6" />
+                </span>
+                <h4 className="font-display font-bold text-white text-sm line-clamp-3 leading-snug tracking-tight">
+                  {movie.title}
+                </h4>
+              </div>
+
+              <div className="w-full pt-2 border-t border-white/5 text-[10px] text-neutral-400 truncate">
+                {genreText}
+              </div>
             </div>
           )}
           
           {/* Overlay on hover */}
-          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm p-4">
+          <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm p-4">
             <button 
               onClick={() => setIsOverviewOpen(true)}
               className="w-full py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-full transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg flex items-center justify-center gap-2 border border-white/20 text-xs"
