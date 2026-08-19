@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cinematic-base text-white antialiased selection:bg-netflix-red/30 selection:text-white font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer utilities {
+  .smooth-scroll { scroll-behavior: smooth; }
+  .glass-panel {
+    @apply bg-cinematic-surface/80 backdrop-blur-xl border border-white/5;
+  }
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .text-shadow-md {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+}

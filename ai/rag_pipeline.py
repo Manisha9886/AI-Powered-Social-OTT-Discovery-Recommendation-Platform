@@ -12,6 +12,8 @@ class RAGPipeline:
     def __init__(self):
         self.vector_store = None
         self.movie_lookup = {}
+        self.bm25_index = None
+        self.bm25_corpus_map = []
         self.is_initialized = False
 
     def initialize(self):
@@ -26,14 +28,25 @@ class RAGPipeline:
             print(f"Failed to initialize Vector Store: {e}")
             self.vector_store = None
 
-        # 3. Load Fact Lookup Data for Grounding
+        # 2. Load Fact Lookup Data for Grounding
         self._load_movie_lookup()
         
+        # 3. Build Local BM25 Sparse Index
+        self._build_bm25_index()
+
         self.is_initialized = True
+
+        print("Pinecone Dense Retrieval: READY")
+        if self.bm25_index:
+            print("BM25 Sparse Retrieval: READY")
+            print("Hybrid RRF Retrieval: READY")
+        else:
+            print("BM25 Sparse Retrieval: UNAVAILABLE")
 
     def _load_movie_lookup(self):
         """Load the authoritative JSON lookup for O(1) fact checking."""
-        lookup_path = "data/processed/movie_lookup.json"
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        lookup_path = os.path.join(base_dir, "data", "processed", "movie_lookup.json")
         if not os.path.exists(lookup_path):
             print(f"Warning: {lookup_path} not found. Grounding might be limited.")
             return
@@ -44,6 +57,54 @@ class RAGPipeline:
             print(f"Loaded {len(self.movie_lookup)} movie facts into memory.")
         except Exception as e:
             print(f"Error loading movie lookup: {e}")
+
+    def _tokenize(self, text: str) -> List[str]:
+        """Simple deterministic tokenizer: lowercase, remove punctuation, split by whitespace."""
+        import string
+        text = text.lower()
+        text = text.translate(str.maketrans("", "", string.punctuation))
+        return text.split()
+
+    def _build_bm25_index(self):
+        """Builds a local BM25 sparse index using available metadata fields."""
+        if not self.movie_lookup:
+            print("Warning: movie_lookup is empty. Cannot build BM25 index.")
+            return
+
+        try:
+            from rank_bm25 import BM25Okapi
+        except ImportError:
+            print("Warning: rank_bm25 not installed. Using dense retrieval fallback.")
+            return
+
+        print("Building BM25 sparse index from movie corpus...")
+        tokenized_corpus = []
+        self.bm25_corpus_map = []
+
+        for movie_id_str, movie_data in self.movie_lookup.items():
+            # Combine relevant fields
+            title = movie_data.get("title", "")
+            overview = movie_data.get("overview", movie_data.get("content", ""))
+            genres = " ".join(movie_data.get("genres", []) if isinstance(movie_data.get("genres"), list) else [movie_data.get("genres", "")])
+            cast = " ".join(movie_data.get("cast", []) if isinstance(movie_data.get("cast"), list) else [movie_data.get("cast", "")])
+            keywords = " ".join(movie_data.get("keywords", []) if isinstance(movie_data.get("keywords"), list) else [movie_data.get("keywords", "")])
+
+            # Construct searchable document
+            searchable_text = f"{title} {title} {genres} {overview} {cast} {keywords}"
+            
+            tokenized_corpus.append(self._tokenize(searchable_text))
+            self.bm25_corpus_map.append({
+                "movie_id": int(movie_id_str),
+                "title": title,
+                "metadata": movie_data
+            })
+
+        try:
+            self.bm25_index = BM25Okapi(tokenized_corpus)
+            print(f"BM25 index built with {len(self.bm25_corpus_map)} documents.")
+        except Exception as e:
+            print(f"Error initializing BM25: {e}")
+            self.bm25_index = None
 
     def _build_context(self, candidates: List[Dict[str, Any]]) -> str:
         """Construct a strictly grounded string of movie facts."""
@@ -75,25 +136,27 @@ class RAGPipeline:
     def _call_llama(self, prompt: str) -> str:
         hf_token = os.getenv("HF_TOKEN")
         hf_model = os.getenv("HF_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
-        hf_provider = os.getenv("HF_PROVIDER", "auto")
         
         if not hf_token:
             return "Error: HF_TOKEN is not set."
 
         try:
             from huggingface_hub import InferenceClient
-            client = InferenceClient(provider=hf_provider, api_key=hf_token)
+            client = InferenceClient(model=hf_model, token=hf_token)
             
-            completion = client.chat.completions.create(
-                model=hf_model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful AI movie recommendation assistant. Be brief and friendly."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=int(os.getenv("HF_MAX_TOKENS", "1024")),
-                temperature=0.7,
+            messages = [
+                {"role": "system", "content": "You are a helpful AI movie recommendation assistant. Be brief and friendly."},
+                {"role": "user", "content": prompt}
+            ]
+            max_tokens = int(os.getenv("HF_MAX_TOKENS", "1024"))
+            
+            response = client.chat_completion(
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=0.7
             )
-            return completion.choices[0].message.content.strip()
+            
+            return response.choices[0].message.content.strip()
             
         except Exception as e:
             return f"HuggingFace API Error: {e}"
@@ -115,13 +178,71 @@ class RAGPipeline:
         if not self.vector_store:
             return "Error: Vector database is not configured or unavailable."
 
-        # 1. Semantic Retrieval
-        print(f"Searching Pinecone for: '{user_query}'...")
+        # 1. Retrieval
+        print(f"Executing Hybrid Search for: '{user_query}'...")
+        
+        # Dense Retrieval (Pinecone)
+        dense_candidates = []
         try:
-            candidates = self.vector_store.search_movies(user_query, top_k=top_k)
+            # Fetch more candidates for fusion
+            dense_candidates = self.vector_store.search_movies(user_query, top_k=20)
         except Exception as e:
-            print(f"Retrieval Error: {e}")
-            return "I'm having trouble searching the movie database right now."
+            print(f"Dense Retrieval Error: {e}")
+            if not self.bm25_index:
+                return "I'm having trouble searching the movie database right now."
+
+        # Sparse Retrieval (BM25)
+        sparse_candidates = []
+        if self.bm25_index:
+            try:
+                tokenized_query = self._tokenize(user_query)
+                bm25_scores = self.bm25_index.get_scores(tokenized_query)
+                
+                # Get top 20
+                import numpy as np
+                top_sparse_idx = np.argsort(bm25_scores)[::-1][:20]
+                
+                for idx in top_sparse_idx:
+                    if bm25_scores[idx] > 0:
+                        doc = self.bm25_corpus_map[idx]
+                        sparse_candidates.append({
+                            "movie_id": doc["movie_id"],
+                            "title": doc["title"],
+                            "score": float(bm25_scores[idx]),
+                            "metadata": doc["metadata"]
+                        })
+            except Exception as e:
+                print(f"Sparse Retrieval Error: {e}")
+
+        # Reciprocal Rank Fusion (RRF)
+        rrf_scores = {}
+        candidate_docs = {}
+        k = 60 # Standard RRF constant
+        
+        # Rank 1-indexed
+        for rank, cand in enumerate(dense_candidates, start=1):
+            mid = cand["movie_id"]
+            rrf_scores[mid] = rrf_scores.get(mid, 0) + (1.0 / (rank + k))
+            cand["dense_score"] = cand.get("score")
+            candidate_docs[mid] = cand
+            
+        for rank, cand in enumerate(sparse_candidates, start=1):
+            mid = cand["movie_id"]
+            rrf_scores[mid] = rrf_scores.get(mid, 0) + (1.0 / (rank + k))
+            if mid not in candidate_docs:
+                candidate_docs[mid] = cand
+            candidate_docs[mid]["bm25_score"] = cand.get("score")
+
+        # Sort by RRF score
+        fused_candidates = []
+        for mid, rrf_score in sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True):
+            doc = candidate_docs[mid]
+            doc["rrf_score"] = rrf_score
+            doc["score"] = rrf_score # Override score for downstream context builder
+            fused_candidates.append(doc)
+            
+        candidates = fused_candidates[:top_k]
+        print(f"Hybrid Retrieval Complete: {len(dense_candidates)} dense, {len(sparse_candidates)} sparse -> {len(candidates)} fused returned.")
 
         if not candidates:
             return "I couldn't find movies that closely match that request in the available catalog."
@@ -137,13 +258,55 @@ class RAGPipeline:
         print("Generating explanation with Llama 3.1...")
         response_text = self._call_llama(prompt)
         
-        # If there's a DNS/Network error, fallback to displaying the Pinecone results nicely
-        if "Error contacting HuggingFace API" in response_text or "HuggingFace API Error" in response_text:
-            fallback = "I'm having trouble connecting to my language generator (network issue), but here are the best matches I found for you:\n\n"
-            for c in candidates:
-                fallback += f"- **{c['title']}** (Score: {c['score']:.2f})\n"
-                fallback += f"  *Plot:* {self.movie_lookup.get(str(c['movie_id']), c.get('metadata', {})).get('overview', 'No plot available')[:100]}...\n\n"
-            return fallback
+        # If the LLM failed, surface the error explicitly to the backend instead of hiding it
+        if "HuggingFace API Error" in response_text or "Error:" in response_text:
+            raise RuntimeError(response_text)
+            
+        return response_text.strip()
+
+    def explain_recommendation(self, movie_id: int, user_query: str, evidence: Dict[str, Any]) -> str:
+        """
+        Explain why a movie was recommended using Grounded LLM Explainability.
+        This uses O(1) fact lookup for authoritative context rather than a redundant Pinecone search.
+        """
+        if not self.is_initialized:
+            self.initialize()
+
+        movie_id_str = str(movie_id)
+        facts = self.movie_lookup.get(movie_id_str, {})
+        
+        title = facts.get("title", f"Movie ID {movie_id}")
+        overview = facts.get("overview", "No plot available.")
+        genres = facts.get("genres", "Unknown")
+        year = facts.get("release_year", "Unknown")
+
+        context = (
+            f"Title: {title} ({year})\n"
+            f"Genres: {genres}\n"
+            f"Plot: {overview}\n"
+        )
+
+        evidence_str = json.dumps(evidence, indent=2)
+
+        prompt = (
+            "You are explaining a recommendation produced by a hybrid movie recommendation system.\n"
+            f"Explain why the recommended movie '{title}' is a good match for the user.\n"
+            "Use the supplied recommendation evidence and verified movie context below.\n"
+            "Do not invent movie facts. Do not invent recommendation scores.\n"
+            "Do not claim evidence that is not provided. If the evidence is insufficient, say so.\n"
+            "Your response should be concise, natural and understandable to a user.\n"
+            "Return PLAIN TEXT ONLY. Do NOT use Markdown, asterisks, bold formatting, or bullet points.\n\n"
+            f"USER REQUEST: {user_query or 'General recommendation'}\n\n"
+            f"RECOMMENDATION EVIDENCE:\n{evidence_str}\n\n"
+            f"VERIFIED MOVIE CONTEXT:\n{context}\n\n"
+            "EXPLANATION:"
+        )
+
+        print(f"Generating explanation for {movie_id} with Llama 3.1...")
+        response_text = self._call_llama(prompt)
+        
+        if "HuggingFace API Error" in response_text or "Error:" in response_text:
+            raise RuntimeError(response_text)
             
         return response_text.strip()
 

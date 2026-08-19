@@ -1,3 +1,10 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1 import api_router

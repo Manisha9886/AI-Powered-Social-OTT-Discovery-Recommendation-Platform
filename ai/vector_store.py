@@ -15,15 +15,21 @@ class MovieVectorStore:
         if not pinecone_api_key:
             raise ValueError("PINECONE_API_KEY environment variable is not set.")
 
+        # SSL bypass flag for development
+        verify_ssl = os.getenv("HF_SSL_VERIFY", "true").lower() == "true"
+
         print(f"Connecting to Pinecone index '{self.index_name}'...")
         # Initialize Pinecone
-        pc = Pinecone(api_key=pinecone_api_key)
+        pc = Pinecone(api_key=pinecone_api_key, ssl_verify=verify_ssl)
         self.index = pc.Index(self.index_name)
         
         # We must use the exact same model that generated the embeddings
         # (all-MiniLM-L6-v2 produces 384-dimensional vectors)
         model_name = "sentence-transformers/all-MiniLM-L6-v2"
-        self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs={"local_files_only": True}
+        )
         
         self.vector_store = PineconeVectorStore(
             index=self.index,
