@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ai.interface import understand_query, explain_recommendation
+from ai.interface import understand_query, explain_recommendation, conversational_recommend
 from pydantic import BaseModel
 from typing import Dict, Any
 
@@ -18,10 +18,18 @@ def ai_understand(request: QueryRequest):
 class ExplainRequest(BaseModel):
     movie_id: int
     evidence: Dict[str, Any]
+    user_query: str = ""
 
 @router.post("/explain")
 def ai_explain(request: ExplainRequest):
     """
-    Explain a recommendation.
+    Explain a recommendation using Grounded LLM Explainability.
     """
-    return explain_recommendation(request.movie_id, request.evidence)
+    return explain_recommendation(request.movie_id, request.evidence, request.user_query)
+
+@router.post("/recommend")
+def ai_recommend(request: QueryRequest):
+    """
+    End-to-end RAG conversational recommendation.
+    """
+    return {"response": conversational_recommend(request.query)}

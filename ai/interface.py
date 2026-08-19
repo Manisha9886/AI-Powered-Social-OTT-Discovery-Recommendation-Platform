@@ -9,13 +9,16 @@ def understand_query(query: str) -> Dict[str, Any]:
     """
     return {"intent": "search", "query": query}
 
-def explain_recommendation(movie_id: int, evidence: Dict[str, Any]) -> Dict[str, Any]:
+def explain_recommendation(movie_id: int, evidence: Dict[str, Any], user_query: str = "") -> Dict[str, Any]:
     """
-    Generate a natural language explanation for why a movie was recommended.
-    (This is a placeholder for backward compatibility.
-    The new RAG pipeline generates explanations directly).
+    Generate a natural language explanation for why a movie was recommended
+    using Grounded LLM Explainability.
     """
-    return {"explanation": "Recommended based on your preferences."}
+    try:
+        explanation = rag_pipeline_instance.explain_recommendation(movie_id, user_query, evidence)
+        return {"explanation": explanation}
+    except Exception as e:
+        return {"explanation": f"AI explanation temporarily unavailable. Error: {e}"}
 
 def conversational_recommend(user_query: str) -> str:
     """
