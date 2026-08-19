@@ -1,0 +1,36 @@
+# ==============================================================================
+# Master Requirements for AI-Powered Social OTT Discovery & Recommendation Platform
+# ==============================================================================
+
+# --- Backend & Web Framework ---
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.6
+
+# --- Database & Authentication ---
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# --- Recommendation & Data Science ---
+pandas
+numpy
+scikit-learn
+scipy
+pyarrow
+
+# --- AI, RAG & LLM Integration ---
+langchain>=0.1.0
+langchain-core
+langchain-huggingface
+langchain-pinecone
+pinecone
+sentence-transformers
+huggingface-hub
+
+# --- Environment & Utilities ---
+python-dotenv>=1.0.0
+requests
