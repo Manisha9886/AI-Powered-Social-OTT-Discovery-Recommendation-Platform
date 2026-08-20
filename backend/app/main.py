@@ -42,6 +42,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root_check():
+    return {
+        "status": "online",
+        "service": "AI-Powered OTT Discovery API",
+        "docs": "/docs"
+    }
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
