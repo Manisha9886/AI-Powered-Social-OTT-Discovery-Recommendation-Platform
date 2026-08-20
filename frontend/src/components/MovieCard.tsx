@@ -16,21 +16,55 @@ export interface MovieCardProps {
   showScore?: boolean;
 }
 
+const POPULAR_POSTERS: Record<string, string> = {
+  'Avatar': 'https://image.tmdb.org/t/p/w500/kyeqWdyUXW608qlYAQxsj5jfm2n.jpg',
+  "Pirates of the Caribbean: At World's End": 'https://image.tmdb.org/t/p/w500/z8eeWxq1KVWYe25gnme8qlv8RzU.jpg',
+  'Spectre': 'https://image.tmdb.org/t/p/w500/6720AcE6wWwW9wKqgE6s0yX1W2g.jpg',
+  'The Dark Knight Rises': 'https://image.tmdb.org/t/p/w500/8RMuF3iLghYvT828iM7N5c9j1G.jpg',
+  'John Carter': 'https://image.tmdb.org/t/p/w500/lC11z1hM385aW4c58zW7W957a41.jpg',
+  'Spider-Man 3': 'https://image.tmdb.org/t/p/w500/22u6hH2y60bM35W9A608y671M0S.jpg',
+  'Tangled': 'https://image.tmdb.org/t/p/w500/ym7Kst6a4uodfZxLh2wW2gL81bA.jpg',
+  'Avengers: Age of Ultron': 'https://image.tmdb.org/t/p/w500/4ssD2W1VUtYfq2ikIKgh9yEIGKC.jpg',
+  'Harry Potter and the Half-Blood Prince': 'https://image.tmdb.org/t/p/w500/z7uo9rmGjYsgWi1pGG3ZBDW0pB.jpg',
+  'Batman v Superman: Dawn of Justice': 'https://image.tmdb.org/t/p/w500/5UsK3grJvtZz8v6G5U1pq5ut8u5.jpg',
+  'The Dark Knight': 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+  'Inception': 'https://image.tmdb.org/t/p/w500/oYuLE29W91vPlTlYWfUd0E2ftw.jpg',
+  'Interstellar': 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+  'Titanic': 'https://image.tmdb.org/t/p/w500/9cqN1X0w8vT6Y1UkIh2w4x06iUd.jpg',
+  'Inside Out': 'https://image.tmdb.org/t/p/w500/lRHE0vzf3oYJrh2zdfVSuuYvMho.jpg',
+  'Iron Man': 'https://image.tmdb.org/t/p/w500/78lPtwv72eTNqFW9COBYI0dWDSt.jpg',
+  'Up': 'https://image.tmdb.org/t/p/w500/vpbaStTMt8w9X8RvyYrabL2coR3.jpg'
+};
+
 export default function MovieCard({ movie, showScore }: MovieCardProps) {
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const isValidImage = (path?: string) => {
-    if (!path) return false;
-    if (path.startsWith('/')) return true; // TMDB relative image path
-    if (path.includes('image.tmdb.org') || path.includes('media-amazon.com') || path.includes('ssl-images-amazon.com') || path.includes('wikimedia.org')) return true;
-    if (path.match(/\.(jpg|jpeg|png|webp)(\?.*)?$/i)) return true;
-    return false;
+  const getPosterUrl = () => {
+    if (POPULAR_POSTERS[movie.title]) return POPULAR_POSTERS[movie.title];
+    
+    const path = movie.poster_path;
+    if (path && (path.startsWith('/') || path.includes('image.tmdb.org') || path.includes('media-amazon.com') || path.includes('wikimedia.org') || path.match(/\.(jpg|jpeg|png|webp)(\?.*)?$/i))) {
+      return path.startsWith('http') ? path : `https://image.tmdb.org/t/p/w500${path}`;
+    }
+    
+    const genreStr = Array.isArray(movie.genres) ? movie.genres.join(' ').toLowerCase() : String(movie.genres || '').toLowerCase();
+    if (genreStr.includes('action') || genreStr.includes('adventure')) {
+      return 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop';
+    } else if (genreStr.includes('sci-fi') || genreStr.includes('science fiction') || genreStr.includes('fantasy')) {
+      return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop';
+    } else if (genreStr.includes('animation') || genreStr.includes('family')) {
+      return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop';
+    } else if (genreStr.includes('horror') || genreStr.includes('thriller') || genreStr.includes('crime')) {
+      return 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop';
+    } else if (genreStr.includes('comedy')) {
+      return 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=500&auto=format&fit=crop';
+    } else {
+      return 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=500&auto=format&fit=crop';
+    }
   };
 
-  const posterUrl = (!imgError && isValidImage(movie.poster_path))
-    ? (movie.poster_path!.startsWith('http') ? movie.poster_path! : `https://image.tmdb.org/t/p/w500${movie.poster_path}`)
-    : null;
+  const posterUrl = !imgError ? getPosterUrl() : 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=500&auto=format&fit=crop';
 
   const genreText = Array.isArray(movie.genres) 
     ? movie.genres.slice(0, 2).join(', ') 
