@@ -4,10 +4,7 @@ import { Link } from 'react-router-dom';
 import { RecommendationItem, Movie } from '../types';
 import { Star, ChevronDown, ChevronUp, AlertCircle, Film, Sparkles, Loader2 } from 'lucide-react';
 
-import { useAuth } from '../context/AuthContext';
-
 export default function Recommendations() {
-  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<RecommendationItem[]>([]);
   const [metadata, setMetadata] = useState<Record<number, Movie>>({});
   const [loading, setLoading] = useState(true);
@@ -23,7 +20,7 @@ export default function Recommendations() {
     setLoading(true);
     setError(null);
     try {
-      const res = await recommendationService.getRecommendations(user?.id);
+      const res = await recommendationService.getRecommendations(101);
       const recs: RecommendationItem[] = res.data.recommendations || [];
       setRecommendations(recs);
 
@@ -52,7 +49,7 @@ export default function Recommendations() {
 
   useEffect(() => {
     fetchRecommendations();
-  }, [user?.id]);
+  }, []);
 
   const toggleEvidence = (id: number) => {
     setExpandedId(expandedId === id ? null : id);

@@ -33,11 +33,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS configuration - Permissive for all public frontend clients
+# CORS configuration - Dynamically support credentials across all Vercel & local clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origin_regex=r".*",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

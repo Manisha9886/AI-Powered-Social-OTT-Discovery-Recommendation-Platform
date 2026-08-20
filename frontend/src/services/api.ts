@@ -42,7 +42,7 @@ export const aiService = {
 };
 
 export const recommendationService = {
-  getRecommendations: (userId?: number) => api.get(`/recommendations${userId ? `?user_id=${userId}` : ''}`),
+  getRecommendations: (userId: number = 101) => api.get(`/recommendations?user_id=${userId}`),
 };
 
 export const authService = {
