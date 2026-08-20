@@ -29,8 +29,8 @@ except Exception as e:
 
 app = FastAPI(
     title="OTT Discovery API",
-    description="API for the AI-Powered Social OTT Discovery & Recommendation Platform (v1.0.1)",
-    version="1.0.1",
+    description="API for the AI-Powered Social OTT Discovery & Recommendation Platform (v1.0.2)",
+    version="1.0.2",
 )
 
 # CORS configuration - Dynamically support credentials across all Vercel & local clients

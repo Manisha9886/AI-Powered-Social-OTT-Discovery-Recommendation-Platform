@@ -146,6 +146,10 @@ def get_recommendations(
             recs.append({
                 "movie_id": m_data.get("movie_id"),
                 "title": m_data.get("title"),
+                "poster_path": m_data.get("poster_path"),
+                "release_year": m_data.get("release_year"),
+                "genres": m_data.get("genres"),
+                "vote_average": m_data.get("vote_average") or m_data.get("rating_score"),
                 "score": round(score, 3),
                 "evidence": {
                     "matched_genres": [g for g in pref_genres if g in m_data.get("genres", [])],

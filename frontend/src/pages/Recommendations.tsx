@@ -136,23 +136,32 @@ export default function Recommendations() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {recommendations.map((rec) => {
-          const meta = metadata[rec.movie_id];
+          const meta = metadata[rec.movie_id] || (rec as any);
           const hasEvidence = rec.evidence && Object.keys(rec.evidence).length > 0;
           const getRecPoster = () => {
-            const p = meta?.poster_path;
+            const p = (rec as any).poster_path || meta?.poster_path;
             if (p && (p.startsWith('http') || p.startsWith('/'))) {
               return p.startsWith('http') ? p : `https://image.tmdb.org/t/p/w500${p}`;
             }
-            const g = meta?.genres ? (Array.isArray(meta.genres) ? meta.genres.join(' ') : meta.genres) : '';
+            const gArr = (rec as any).genres || meta?.genres;
+            const g = gArr ? (Array.isArray(gArr) ? gArr.join(' ') : String(gArr)) : '';
             if (g.toLowerCase().includes('action') || g.toLowerCase().includes('adventure')) {
               return 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop';
             } else if (g.toLowerCase().includes('sci-fi') || g.toLowerCase().includes('fantasy')) {
               return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop';
+            } else if (g.toLowerCase().includes('animation') || g.toLowerCase().includes('family')) {
+              return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop';
+            } else if (g.toLowerCase().includes('horror') || g.toLowerCase().includes('thriller')) {
+              return 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop';
             }
             return 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=500&auto=format&fit=crop';
           };
           
           const posterUrl = getRecPoster();
+          const releaseYear = (rec as any).release_year || meta?.release_year;
+          const genreList = (rec as any).genres || meta?.genres || [];
+          const voteAvg = (rec as any).vote_average || meta?.vote_average;
+          const scoreVal = rec.score !== undefined ? rec.score : (rec.final_score !== undefined ? rec.final_score : 0.85);
 
           return (
             <div key={rec.movie_id} className="group relative flex flex-col bg-cinematic-surface border border-cinematic-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 shadow-xl hover:-translate-y-1 hover:shadow-2xl">
@@ -164,7 +173,7 @@ export default function Recommendations() {
                 {/* Score Badge */}
                 <div className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center space-x-1">
                   <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                  <span className="text-xs font-bold text-white">{(rec.final_score * 100).toFixed(0)}</span>
+                  <span className="text-xs font-bold text-white">{(scoreVal * 100).toFixed(0)}%</span>
                 </div>
               </Link>
               
@@ -175,14 +184,14 @@ export default function Recommendations() {
                 
                 {/* Metadata Row */}
                 <div className="flex items-center space-x-3 text-xs text-neutral-400 mb-4 font-medium">
-                  {meta?.release_year && <span>{meta.release_year}</span>}
-                  {meta?.release_year && meta?.genres?.length > 0 && <span>•</span>}
-                  {meta?.genres && meta.genres.length > 0 && <span className="truncate">{meta.genres[0]}</span>}
-                  {meta?.vote_average ? (
+                  {releaseYear && <span>{releaseYear}</span>}
+                  {releaseYear && genreList.length > 0 && <span>•</span>}
+                  {genreList.length > 0 && <span className="truncate">{Array.isArray(genreList) ? genreList[0] : genreList}</span>}
+                  {voteAvg ? (
                     <>
                       <span>•</span>
                       <span className="flex items-center text-neutral-300">
-                        {meta.vote_average.toFixed(1)}/10
+                        {Number(voteAvg).toFixed(1)}/10
                       </span>
                     </>
                   ) : null}
