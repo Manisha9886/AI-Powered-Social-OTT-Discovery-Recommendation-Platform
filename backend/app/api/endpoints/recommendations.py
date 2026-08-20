@@ -98,9 +98,14 @@ def get_recommendations(
     """
     target_user_id = user_id or 101
     
-    # Check if preference exists in database for this user_id
-    pref = db.query(UserPreference).filter(UserPreference.user_id == target_user_id).first()
+    pref = None
+    if user_id:
+        pref = db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
     
+    if not pref:
+        # Fallback to the latest saved preference in database
+        pref = db.query(UserPreference).order_by(UserPreference.id.desc()).first()
+        
     if pref and (pref.genres or pref.duration or pref.release_year):
         pref_genres = pref.genres or []
         pref_duration = pref.duration or []
