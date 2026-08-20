@@ -29,14 +29,24 @@ def ai_explain(request: ExplainRequest):
     """
     return explain_recommendation(request.movie_id, request.evidence, request.user_query)
 
-PROCESSED_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'data', 'processed')
-LOOKUP_PATH = os.path.join(PROCESSED_DIR, 'movie_lookup.json')
+def get_movie_lookup_path():
+    current_file = os.path.abspath(__file__)
+    dir_path = os.path.dirname(current_file)
+    for _ in range(6):
+        target = os.path.join(dir_path, "data", "processed", "movie_lookup.json")
+        if os.path.exists(target):
+            return target
+        dir_path = os.path.dirname(dir_path)
+    return os.path.join(os.getcwd(), "data", "processed", "movie_lookup.json")
+
+LOOKUP_PATH = get_movie_lookup_path()
 movies_lookup: Dict[str, Any] = {}
 try:
     with open(LOOKUP_PATH, 'r', encoding='utf-8') as f:
         movies_lookup = json.load(f)
-except Exception:
-    pass
+    print(f"ai.py loaded {len(movies_lookup)} movies from {LOOKUP_PATH}")
+except Exception as e:
+    print(f"ai.py failed to load movie_lookup.json: {e}")
 
 def generate_dynamic_fallback(query: str) -> str:
     query_words = [w.lower().strip() for w in query.split() if len(w.strip()) > 2]

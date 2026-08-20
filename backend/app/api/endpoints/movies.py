@@ -7,9 +7,18 @@ from typing import List, Optional, Dict, Any
 router = APIRouter()
 
 # Load movie lookup data
-PROCESSED_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'data', 'processed')
-LOOKUP_PATH = os.path.join(PROCESSED_DIR, 'movie_lookup.json')
-DOCS_PATH = os.path.join(PROCESSED_DIR, 'movie_knowledge_docs.json')
+def resolve_processed_file(filename: str) -> str:
+    current_file = os.path.abspath(__file__)
+    dir_path = os.path.dirname(current_file)
+    for _ in range(6):
+        target = os.path.join(dir_path, "data", "processed", filename)
+        if os.path.exists(target):
+            return target
+        dir_path = os.path.dirname(dir_path)
+    return os.path.join(os.getcwd(), "data", "processed", filename)
+
+LOOKUP_PATH = resolve_processed_file('movie_lookup.json')
+DOCS_PATH = resolve_processed_file('movie_knowledge_docs.json')
 
 movies_data: Dict[str, Any] = {}
 knowledge_cache: Dict[str, str] = {}

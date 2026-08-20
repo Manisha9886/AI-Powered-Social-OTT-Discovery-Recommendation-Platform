@@ -12,14 +12,23 @@ from recommendation.interface import recommend
 
 router = APIRouter()
 
-# Load movie catalog lookup for preference scoring
-PROCESSED_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'data', 'processed')
-LOOKUP_PATH = os.path.join(PROCESSED_DIR, 'movie_lookup.json')
+def get_movie_lookup_path():
+    current_file = os.path.abspath(__file__)
+    dir_path = os.path.dirname(current_file)
+    for _ in range(6):
+        target = os.path.join(dir_path, "data", "processed", "movie_lookup.json")
+        if os.path.exists(target):
+            return target
+        dir_path = os.path.dirname(dir_path)
+    return os.path.join(os.getcwd(), "data", "processed", "movie_lookup.json")
+
+LOOKUP_PATH = get_movie_lookup_path()
 
 movies_data: Dict[str, Any] = {}
 try:
     with open(LOOKUP_PATH, 'r', encoding='utf-8') as f:
         movies_data = json.load(f)
+    print(f"recommendations.py loaded {len(movies_data)} movies from {LOOKUP_PATH}")
 except Exception as e:
     print(f"Failed to load movie_lookup.json for recommendations: {e}")
 
