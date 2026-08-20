@@ -1,3 +1,5 @@
+import os
+import json
 from fastapi import APIRouter
 from ai.interface import understand_query, explain_recommendation, conversational_recommend
 from pydantic import BaseModel
