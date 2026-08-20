@@ -65,6 +65,52 @@ class RAGPipeline:
         text = text.translate(str.maketrans("", "", string.punctuation))
         return text.split()
 
+    def _expand_query(self, user_query: str) -> str:
+        """
+        Expands natural language terms with catalog standard genres and keywords.
+        For example: 'funny' -> 'funny comedy laugh hilarious'
+        """
+        synonym_map = {
+            "funny": "comedy laugh hilarious",
+            "hilarious": "comedy funny laugh",
+            "humorous": "comedy funny",
+            "laugh": "comedy funny",
+            "scary": "horror frightening spooky creepy",
+            "spooky": "horror scary",
+            "creepy": "horror scary",
+            "frightening": "horror scary",
+            "romantic": "romance love dating",
+            "love": "romance romantic",
+            "action-packed": "action adventure explosive",
+            "sci-fi": "science fiction scifi futuristic space",
+            "scifi": "science fiction scifi futuristic space",
+            "futuristic": "science fiction scifi",
+            "space": "science fiction space",
+            "thriller": "thriller suspense mystery edge-of-seat",
+            "suspense": "thriller suspense mystery",
+            "mystery": "mystery thriller detective",
+            "animated": "animation animated cartoon",
+            "cartoon": "animation animated",
+            "anime": "animation anime japanese",
+            "kids": "family children kids",
+            "children": "family children kids",
+            "family": "family children kids",
+            "emotional": "drama emotional tearjerker",
+            "sad": "drama emotional",
+        }
+        
+        query_words = self._tokenize(user_query)
+        expanded_terms = set(query_words)
+        
+        for word in query_words:
+            if word in synonym_map:
+                for syn in synonym_map[word].split():
+                    expanded_terms.add(syn)
+                    
+        expanded_query = " ".join(expanded_terms)
+        return expanded_query if expanded_query.strip() else user_query
+
+
     def _build_bm25_index(self):
         """Builds a local BM25 sparse index using available metadata fields."""
         if not self.movie_lookup:
@@ -90,7 +136,7 @@ class RAGPipeline:
             keywords = " ".join(movie_data.get("keywords", []) if isinstance(movie_data.get("keywords"), list) else [movie_data.get("keywords", "")])
 
             # Construct searchable document
-            searchable_text = f"{title} {title} {genres} {overview} {cast} {keywords}"
+            searchable_text = f"{title} {genres} {overview} {overview} {keywords} {cast}"
             
             tokenized_corpus.append(self._tokenize(searchable_text))
             self.bm25_corpus_map.append({
@@ -179,23 +225,24 @@ class RAGPipeline:
             return "Error: Vector database is not configured or unavailable."
 
         # 1. Retrieval
-        print(f"Executing Hybrid Search for: '{user_query}'...")
+        expanded_query = self._expand_query(user_query)
+        print(f"Executing Hybrid Search (Dense on raw query, Sparse on expanded query: '{expanded_query}')...")
         
-        # Dense Retrieval (Pinecone)
+        # Dense Retrieval (Pinecone - query with original semantic query)
         dense_candidates = []
         try:
-            # Fetch more candidates for fusion
+            # Fetch more candidates for fusion using semantic embedding
             dense_candidates = self.vector_store.search_movies(user_query, top_k=20)
         except Exception as e:
             print(f"Dense Retrieval Error: {e}")
             if not self.bm25_index:
                 return "I'm having trouble searching the movie database right now."
 
-        # Sparse Retrieval (BM25)
+        # Sparse Retrieval (BM25 - query with expanded keywords)
         sparse_candidates = []
         if self.bm25_index:
             try:
-                tokenized_query = self._tokenize(user_query)
+                tokenized_query = self._tokenize(expanded_query)
                 bm25_scores = self.bm25_index.get_scores(tokenized_query)
                 
                 # Get top 20
@@ -214,24 +261,28 @@ class RAGPipeline:
             except Exception as e:
                 print(f"Sparse Retrieval Error: {e}")
 
-        # Reciprocal Rank Fusion (RRF)
+        # Reciprocal Rank Fusion (RRF with Dense Vector Priority)
         rrf_scores = {}
         candidate_docs = {}
         k = 60 # Standard RRF constant
         
+        dense_weight = 2.5   # Emphasize semantic vector search
+        sparse_weight = 0.5  # De-emphasize exact keyword matches
+        
         # Rank 1-indexed
         for rank, cand in enumerate(dense_candidates, start=1):
             mid = cand["movie_id"]
-            rrf_scores[mid] = rrf_scores.get(mid, 0) + (1.0 / (rank + k))
+            rrf_scores[mid] = rrf_scores.get(mid, 0) + (dense_weight / (rank + k))
             cand["dense_score"] = cand.get("score")
             candidate_docs[mid] = cand
             
         for rank, cand in enumerate(sparse_candidates, start=1):
             mid = cand["movie_id"]
-            rrf_scores[mid] = rrf_scores.get(mid, 0) + (1.0 / (rank + k))
+            rrf_scores[mid] = rrf_scores.get(mid, 0) + (sparse_weight / (rank + k))
             if mid not in candidate_docs:
                 candidate_docs[mid] = cand
             candidate_docs[mid]["bm25_score"] = cand.get("score")
+
 
         # Sort by RRF score
         fused_candidates = []
@@ -245,7 +296,19 @@ class RAGPipeline:
         print(f"Hybrid Retrieval Complete: {len(dense_candidates)} dense, {len(sparse_candidates)} sparse -> {len(candidates)} fused returned.")
 
         if not candidates:
-            return "I couldn't find movies that closely match that request in the available catalog."
+            print("No hybrid search candidates found. Utilizing top catalog candidates as fallback...")
+            fallback_candidates = []
+            for movie_id_str, movie_data in self.movie_lookup.items():
+                rating = float(movie_data.get("vote_average", 0) or 0)
+                fallback_candidates.append({
+                    "movie_id": int(movie_id_str),
+                    "title": movie_data.get("title", "Unknown"),
+                    "score": rating,
+                    "metadata": movie_data
+                })
+            fallback_candidates.sort(key=lambda x: x["score"], reverse=True)
+            candidates = fallback_candidates[:top_k]
+
 
         # 2. Context Grounding
         context = self._build_context(candidates)

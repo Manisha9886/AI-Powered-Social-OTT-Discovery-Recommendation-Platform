@@ -1,7 +1,6 @@
 import os
 from typing import List, Dict, Any
 from pinecone import Pinecone
-from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,7 +11,7 @@ class MovieVectorStore:
         self.index_name = os.getenv("PINECONE_INDEX_NAME", "movie-recommendations")
         
         self.index = None
-        self.model = None
+        self._model = None
 
         if pinecone_api_key:
             try:
@@ -22,26 +21,23 @@ class MovieVectorStore:
             except Exception as e:
                 print(f"Pinecone initialization note: {e}")
 
-        # Model will be lazy-loaded on first search call to save memory
-        self.model = None
-
-    def _get_model(self):
-        if self.model is None:
+    @property
+    def model(self):
+        if self._model is None:
             try:
-                self.model = SentenceTransformer("all-MiniLM-L6-v2")
+                from sentence_transformers import SentenceTransformer
+                self._model = SentenceTransformer("all-MiniLM-L6-v2")
             except Exception as e:
                 print(f"SentenceTransformer initialization note: {e}")
-        return self.model
+        return self._model
 
     def search_movies(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        model = self._get_model()
-        if not self.index or not model:
+        if not self.index or not self.model:
             return []
 
         try:
-            query_vector = model.encode(query).tolist()
+            query_vector = self.model.encode(query).tolist()
             res = self.index.query(vector=query_vector, top_k=top_k, include_metadata=True)
-
 
             candidates = []
             for match in res.get("matches", []):
