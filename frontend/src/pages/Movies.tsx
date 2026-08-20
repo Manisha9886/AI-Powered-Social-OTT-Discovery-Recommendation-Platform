@@ -25,9 +25,10 @@ export default function Movies() {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     const titleMatch = movie.title.toLowerCase().includes(query);
-    const genreMatch = Array.isArray(movie.genres) 
-      ? movie.genres.some(g => g.toLowerCase().includes(query))
-      : (typeof movie.genres === 'string' && movie.genres.toLowerCase().includes(query));
+    const rawGenres: any = movie.genres;
+    const genreMatch = Array.isArray(rawGenres) 
+      ? rawGenres.some((g: any) => String(g).toLowerCase().includes(query))
+      : (typeof rawGenres === 'string' && (rawGenres as string).toLowerCase().includes(query));
     return titleMatch || genreMatch;
   });
 

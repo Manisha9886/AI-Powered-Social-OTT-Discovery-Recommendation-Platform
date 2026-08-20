@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { preferenceService } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { Check, ArrowRight, ArrowLeft, Sparkles, Film, Clock, Calendar, Loader2 } from 'lucide-react';
 
 const GENRE_OPTIONS = [
@@ -27,7 +26,6 @@ const YEAR_OPTIONS = [
 ];
 
 export default function Onboarding() {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
