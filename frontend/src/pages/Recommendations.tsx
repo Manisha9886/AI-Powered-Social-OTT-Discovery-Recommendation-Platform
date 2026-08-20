@@ -138,25 +138,28 @@ export default function Recommendations() {
         {recommendations.map((rec) => {
           const meta = metadata[rec.movie_id];
           const hasEvidence = rec.evidence && Object.keys(rec.evidence).length > 0;
-          const isValidImage = meta?.poster_path && (meta.poster_path.startsWith('http') || meta.poster_path.endsWith('.jpg') || meta.poster_path.endsWith('.png') || meta.poster_path.endsWith('.jpeg'));
+          const getRecPoster = () => {
+            const p = meta?.poster_path;
+            if (p && (p.startsWith('http') || p.startsWith('/'))) {
+              return p.startsWith('http') ? p : `https://image.tmdb.org/t/p/w500${p}`;
+            }
+            const g = meta?.genres ? (Array.isArray(meta.genres) ? meta.genres.join(' ') : meta.genres) : '';
+            if (g.toLowerCase().includes('action') || g.toLowerCase().includes('adventure')) {
+              return 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500&auto=format&fit=crop';
+            } else if (g.toLowerCase().includes('sci-fi') || g.toLowerCase().includes('fantasy')) {
+              return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&auto=format&fit=crop';
+            }
+            return 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=500&auto=format&fit=crop';
+          };
           
+          const posterUrl = getRecPoster();
+
           return (
             <div key={rec.movie_id} className="group relative flex flex-col bg-cinematic-surface border border-cinematic-border rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 shadow-xl hover:-translate-y-1 hover:shadow-2xl">
               
-              {/* Cinematic Fallback or Poster */}
+              {/* Cinematic Poster */}
               <Link to={`/movies/${rec.movie_id}`} className="relative h-64 w-full bg-gradient-to-br from-neutral-800 to-black overflow-hidden flex flex-col items-center justify-center text-center p-4">
-                {isValidImage ? (
-                  <img src={meta.poster_path} alt={rec.title} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
-                )}
-                
-                {/* Fallback Title Overlay if no image, or just stylistic if image */}
-                {!isValidImage && (
-                  <h3 className="relative z-20 text-2xl font-black text-white/90 tracking-tighter uppercase leading-tight drop-shadow-lg">
-                    {rec.title}
-                  </h3>
-                )}
+                <img src={posterUrl} alt={rec.title} className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                 
                 {/* Score Badge */}
                 <div className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center space-x-1">
