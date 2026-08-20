@@ -39,7 +39,9 @@ def score_movie_against_preferences(
     if not pref_genres:
         genre_score = 1.0
     else:
-        matches = sum(1 for g in movie_genres if g in pref_genres)
+        matches = sum(1 for g in movie_genres if any(pg.lower() in str(g).lower() for pg in pref_genres))
+        if matches == 0:
+            return 0.0
         genre_score = min(1.0, matches / max(1, len(pref_genres)))
         
     # 2. Duration Score (20%)
