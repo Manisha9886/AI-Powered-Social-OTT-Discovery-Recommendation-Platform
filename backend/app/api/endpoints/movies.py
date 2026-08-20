@@ -69,7 +69,17 @@ def get_movie_overview(movie_id: str):
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    # 1. Check local knowledge cache
+    # 1. Check overview in movie dictionary
+    plot_overview = movie.get("overview") or movie.get("content")
+    if plot_overview and len(str(plot_overview).strip()) > 10:
+        return {
+            "movie_id": int(movie_id),
+            "title": movie.get("title"),
+            "overview": plot_overview,
+            "source": "movie_facts"
+        }
+
+    # 2. Check local knowledge cache
     if str_id in knowledge_cache and knowledge_cache[str_id]:
         return {
             "movie_id": int(movie_id),
