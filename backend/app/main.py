@@ -2,8 +2,15 @@ import os
 import sys
 import ssl
 
-# Ensure backend directory is in sys.path so 'app' imports work regardless of execution context
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Register both project root and backend directory in sys.path for universal module imports
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+root_dir = os.path.dirname(backend_dir)
+
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 
 from dotenv import load_dotenv
 load_dotenv()
