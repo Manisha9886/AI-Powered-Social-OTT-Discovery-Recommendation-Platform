@@ -2,19 +2,24 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.core.config import settings
 
-db_url = settings.DATABASE_URL
+import os
+db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or settings.DATABASE_URL
 
-# Attempt PostgreSQL connection, fall back to local SQLite if PostgreSQL is not active
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+# Attempt database connection, fall back to local SQLite if primary DB is unavailable
 try:
-    if db_url.startswith("sqlite"):
+    if db_url and db_url.startswith("sqlite"):
         engine = create_engine(db_url, connect_args={"check_same_thread": False})
-    else:
+    elif db_url and ("postgresql" in db_url or "postgres" in db_url):
         engine = create_engine(db_url, pool_pre_ping=True)
-        # Test connection
         with engine.connect() as conn:
             pass
+    else:
+        raise ValueError(f"Unsupported database URL scheme")
 except Exception as e:
-    print(f"PostgreSQL connection unavailable ({e}). Falling back to local SQLite database (ott_discovery.db).")
+    print(f"Primary database connection note ({e}). Using ott_discovery.db SQLite database.")
     sqlite_url = "sqlite:///./ott_discovery.db"
     engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
