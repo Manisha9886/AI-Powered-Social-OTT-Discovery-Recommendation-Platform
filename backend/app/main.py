@@ -1,9 +1,17 @@
 import os
+import sys
+import ssl
+
+# Ensure backend directory is in sys.path so 'app' imports work regardless of execution context
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from dotenv import load_dotenv
 load_dotenv()
 
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
+# Bypass SSL verification only in development (e.g. Windows dev machines with local proxy/certs)
+if os.getenv("ENVIRONMENT", "development") == "development":
+    ssl._create_default_https_context = ssl._create_unverified_context
+
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,13 +31,17 @@ app = FastAPI(
 )
 
 # CORS configuration
+raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
+origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For dev only
+    allow_origins=origins if origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/health")
 def health_check():

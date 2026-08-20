@@ -3,16 +3,20 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.core.config import settings
 
 db_url = settings.DATABASE_URL
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 
 # Attempt PostgreSQL connection, fall back to local SQLite if PostgreSQL is not active
 try:
     if db_url.startswith("sqlite"):
         engine = create_engine(db_url, connect_args={"check_same_thread": False})
     else:
-        engine = create_engine(db_url, pool_pre_ping=True)
+        engine = create_engine(db_url, pool_pre_ping=True, connect_args={"connect_timeout": 5})
         # Test connection
         with engine.connect() as conn:
             pass
+
 except Exception as e:
     print(f"PostgreSQL connection unavailable ({e}). Falling back to local SQLite database (ott_discovery.db).")
     sqlite_url = "sqlite:///./ott_discovery.db"
