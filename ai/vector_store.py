@@ -22,18 +22,26 @@ class MovieVectorStore:
             except Exception as e:
                 print(f"Pinecone initialization note: {e}")
 
-        try:
-            self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        except Exception as e:
-            print(f"SentenceTransformer initialization note: {e}")
+        # Model will be lazy-loaded on first search call to save memory
+        self.model = None
+
+    def _get_model(self):
+        if self.model is None:
+            try:
+                self.model = SentenceTransformer("all-MiniLM-L6-v2")
+            except Exception as e:
+                print(f"SentenceTransformer initialization note: {e}")
+        return self.model
 
     def search_movies(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        if not self.index or not self.model:
+        model = self._get_model()
+        if not self.index or not model:
             return []
 
         try:
-            query_vector = self.model.encode(query).tolist()
+            query_vector = model.encode(query).tolist()
             res = self.index.query(vector=query_vector, top_k=top_k, include_metadata=True)
+
 
             candidates = []
             for match in res.get("matches", []):
