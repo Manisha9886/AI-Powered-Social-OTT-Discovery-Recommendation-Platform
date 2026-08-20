@@ -17,23 +17,23 @@ export interface MovieCardProps {
 }
 
 const POPULAR_POSTERS: Record<string, string> = {
-  'Avatar': 'https://image.tmdb.org/t/p/w500/kyeqWdyUXW608qlYAQxsj5jfm2n.jpg',
-  "Pirates of the Caribbean: At World's End": 'https://image.tmdb.org/t/p/w500/z8eeWxq1KVWYe25gnme8qlv8RzU.jpg',
-  'Spectre': 'https://image.tmdb.org/t/p/w500/6720AcE6wWwW9wKqgE6s0yX1W2g.jpg',
-  'The Dark Knight Rises': 'https://image.tmdb.org/t/p/w500/8RMuF3iLghYvT828iM7N5c9j1G.jpg',
-  'John Carter': 'https://image.tmdb.org/t/p/w500/lC11z1hM385aW4c58zW7W957a41.jpg',
-  'Spider-Man 3': 'https://image.tmdb.org/t/p/w500/22u6hH2y60bM35W9A608y671M0S.jpg',
-  'Tangled': 'https://image.tmdb.org/t/p/w500/ym7Kst6a4uodfZxLh2wW2gL81bA.jpg',
-  'Avengers: Age of Ultron': 'https://image.tmdb.org/t/p/w500/4ssD2W1VUtYfq2ikIKgh9yEIGKC.jpg',
-  'Harry Potter and the Half-Blood Prince': 'https://image.tmdb.org/t/p/w500/z7uo9rmGjYsgWi1pGG3ZBDW0pB.jpg',
-  'Batman v Superman: Dawn of Justice': 'https://image.tmdb.org/t/p/w500/5UsK3grJvtZz8v6G5U1pq5ut8u5.jpg',
-  'The Dark Knight': 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-  'Inception': 'https://image.tmdb.org/t/p/w500/oYuLE29W91vPlTlYWfUd0E2ftw.jpg',
-  'Interstellar': 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-  'Titanic': 'https://image.tmdb.org/t/p/w500/9cqN1X0w8vT6Y1UkIh2w4x06iUd.jpg',
-  'Inside Out': 'https://image.tmdb.org/t/p/w500/lRHE0vzf3oYJrh2zdfVSuuYvMho.jpg',
-  'Iron Man': 'https://image.tmdb.org/t/p/w500/78lPtwv72eTNqFW9COBYI0dWDSt.jpg',
-  'Up': 'https://image.tmdb.org/t/p/w500/vpbaStTMt8w9X8RvyYrabL2coR3.jpg'
+  'Avatar': 'https://m.media-amazon.com/images/M/MV5BMDEzMmQwZjctZWU2My00MWNlLWE0NjItMDJlYTRlNGJiZjcyXkEyXkFqcGc@._V1_SX300.jpg',
+  "Pirates of the Caribbean: At World's End": 'https://m.media-amazon.com/images/M/MV5BMjIyNjkxNzEyMl5BMl5BanBnXkFtZTYwMjc3MDE3._V1_SX300.jpg',
+  'Spectre': 'https://m.media-amazon.com/images/M/MV5BMzA5MzFiNDAtYTI0NC00MDE5LTljYTctYTNkODk1OTZlODI5XkEyXkFqcGc@._V1_SX300.jpg',
+  'The Dark Knight Rises': 'https://m.media-amazon.com/images/M/MV5BMTk4ODQzNDY3Ml5BMl5BanBnXkFtZTcwODA0NTM4Nw@@._V1_SX300.jpg',
+  'John Carter': 'https://m.media-amazon.com/images/M/MV5BZWNmZGYzZjUtODRmOS00ODgzLWE4NWQtMDI3MGUwNjRjYjY0XkEyXkFqcGc@._V1_SX300.jpg',
+  'Spider-Man 3': 'https://m.media-amazon.com/images/M/MV5BODE2NzNhMDctYjUzMC00Y2M5LWI2Y2EtODJkZTFjN2Y5ODlmXkEyXkFqcGc@._V1_SX300.jpg',
+  'Tangled': 'https://m.media-amazon.com/images/M/MV5BMTAxNDYxMjg0MjNeQTJeQWpwZ15BbWU3MDcyNTk2OTM@._V1_SX300.jpg',
+  'Avengers: Age of Ultron': 'https://m.media-amazon.com/images/M/MV5BODBhYTg1NGQtNGVmNS00ZTdiLThjYTYtZDFkNzRiNTZmNDZjXkEyXkFqcGc@._V1_SX300.jpg',
+  'Harry Potter and the Half-Blood Prince': 'https://m.media-amazon.com/images/M/MV5BNzU3NDg4NTAyNV5BMl5BanBnXkFtZTcwOTg2ODgwMw@@._V1_SX300.jpg',
+  'Batman v Superman: Dawn of Justice': 'https://m.media-amazon.com/images/M/MV5BYThjYzcyYzItNTVjNy00NDVhLWIwMWItDhhn_V1_SX300.jpg',
+  'The Dark Knight': 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_SX300.jpg',
+  'Inception': 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg',
+  'Interstellar': 'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_SX300.jpg',
+  'Titanic': 'https://m.media-amazon.com/images/M/MV5BMDdmZGU3NDQtY2E5My00ZTliLWEzOTUtMTY4ZGI1YjdiNjk3XkEyXkFqcGc@._V1_SX300.jpg',
+  'Inside Out': 'https://m.media-amazon.com/images/M/MV5BOTgxMDQwMDk0OF5BMl5BanBnXkFtZTgwNjU5OTg2NV5BMl5BanBnXkFtZTgwNjU5OTg2NV@@._V1_SX300.jpg',
+  'Iron Man': 'https://m.media-amazon.com/images/M/MV5BMTczNTI2ODUwOF5BMl5BanBnXkFtZTcwMTU0NTIzMw@@._V1_SX300.jpg',
+  'Up': 'https://m.media-amazon.com/images/M/MV5BMTk3NDE2NzI4NF5BMl5BanBnXkFtZTcwNzE1MzEyMw@@._V1_SX300.jpg'
 };
 
 export default function MovieCard({ movie, showScore }: MovieCardProps) {

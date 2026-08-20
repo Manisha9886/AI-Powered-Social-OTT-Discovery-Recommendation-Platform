@@ -60,20 +60,29 @@ def get_movies(page: int = Query(1, ge=1), page_size: int = Query(24, ge=1, le=1
 
 @router.get("/{movie_id}")
 def get_movie(movie_id: str):
-    if movie_id not in movies_data:
+    str_id = str(movie_id)
+    movie = movies_data.get(str_id)
+    if not movie:
+        for m in movies_data.values():
+            if str(m.get("movie_id")) == str_id:
+                movie = m
+                break
+    if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
-    return movies_data[movie_id]
+    return movie
 
 @router.get("/{movie_id}/overview")
 def get_movie_overview(movie_id: str):
     """
     Knowledge-Based Overview Service for Movies.
-    1. Checks cached knowledge docs (movie_knowledge_docs.json).
-    2. Checks TMDB API if TMDB_API_KEY is set in environment.
-    3. Falls back gracefully to metadata summary or "Overview is currently unavailable".
     """
     str_id = str(movie_id)
     movie = movies_data.get(str_id)
+    if not movie:
+        for m in movies_data.values():
+            if str(m.get("movie_id")) == str_id:
+                movie = m
+                break
     
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
